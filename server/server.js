@@ -16,6 +16,9 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'NeuroLens API is running' });
 });
 
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
 // Import and use routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/courses', require('./routes/courses'));
@@ -25,8 +28,17 @@ app.use('/api/ai', require('./routes/ai'));
 app.use('/api/personalized', require('./routes/personalized'));
 app.use('/api/admin', require('./routes/admin'));
 
-// 404 handler
-app.use((req, res, next) => {
+// The "catchall" handler: for any request that doesn't 
+// match one above, send back React's index.html file.
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+});
+
+// 404 handler for API routes
+app.use((req, res) => {
   console.log(`404 Not Found: ${req.method} ${req.url}`);
   res.status(404).json({ error: 'Route not found', method: req.method, path: req.url });
 });
