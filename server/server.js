@@ -27,6 +27,7 @@ app.use('/api/progress', require('./routes/progress'));
 app.use('/api/ai', require('./routes/ai'));
 app.use('/api/personalized', require('./routes/personalized'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/upload', require('./routes/upload'));
 
 // The "catchall" handler: for any request that doesn't 
 // match one above, send back React's index.html file.

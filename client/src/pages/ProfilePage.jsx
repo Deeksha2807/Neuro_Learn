@@ -250,10 +250,20 @@ export default function ProfilePage() {
                       <ChevronRight size={16} className="text-white/20 group-hover:text-primary transition-colors shrink-0 mt-0.5" />
                     </div>
                     <p className="text-xs text-white/40 mb-3">{role.description}</p>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 mb-4">
                       <span className="text-[10px] px-2 py-0.5 rounded bg-green-500/10 border border-green-500/20 text-green-400 font-bold">{role.avgSalary}</span>
                       <span className="text-[10px] px-2 py-0.5 rounded bg-accent/10 border border-accent/20 text-accent font-bold">{role.demand} Demand</span>
                     </div>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); fetchRoadmap(role); }}
+                      className={`w-full py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                        selectedRole?.title === role.title
+                          ? 'bg-primary text-white border-primary shadow-[0_0_15px_rgba(0,180,255,0.4)]'
+                          : 'bg-white/5 border-white/10 hover:bg-primary/20 hover:border-primary/50 hover:text-white text-white/70'
+                      }`}
+                    >
+                      {selectedRole?.title === role.title && roadmapLoading ? 'Generating Roadmap...' : 'Generate Roadmap'}
+                    </button>
                   </div>
                 ))}
               </div>

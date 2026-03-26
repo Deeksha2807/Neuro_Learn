@@ -137,12 +137,14 @@ router.post('/course-info', authMiddleware, async (req, res) => {
   }
 });
 
+const recommendationEngine = require('../services/recommendationEngine');
+
 // Generate personalized learning insights
 router.post('/learning-insights', authMiddleware, async (req, res) => {
   const { progressData } = req.body;
   try {
     if (!progressData) return res.status(400).json({ error: 'Progress data is required' });
-    const insights = await geminiService.generateLearningInsights(progressData);
+    const insights = await recommendationEngine.getRecommendations(progressData);
     res.json(insights);
   } catch (err) {
     console.error(`AI Route Error [${req.path}]:`, err);

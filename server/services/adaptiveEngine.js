@@ -23,7 +23,7 @@ const evaluateProgress = (currentLevel, quizScore) => {
   let newLevel = currentLevel;
   if (quizScore > 85 && currentLevel < 5) {
     newLevel += 1; // Upgrade
-  } else if (quizScore < 40 && currentLevel > 3) {
+  } else if (quizScore < 30 && currentLevel > 3) {
     newLevel -= 1; // Downgrade
   }
   return newLevel;

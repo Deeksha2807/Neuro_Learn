@@ -1,41 +1,34 @@
-const axios = require('axios');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 const fs = require('fs');
 const path = require('path');
+const mammoth = require('mammoth');
 
-// Using the provided Groq API Key
-const apiKey = process.env.GROQ_API_KEY;
+const apiKey = process.env.GEMINI_API_KEY;
 
-if (!apiKey) {
-  console.warn('GROQ_API_KEY must be provided in .env. Falling back to default error handling.');
+if (!apiKey || apiKey === 'your_api_key_here') {
+  console.warn('GEMINI_API_KEY must be provided in .env.');
 }
 
-const GROQ_URL = `https://api.groq.com/openai/v1/chat/completions`;
-const MODEL_NAME = 'llama-3.3-70b-versatile';
+const genAI = new GoogleGenerativeAI(apiKey || 'dummy_key');
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
 
-// Simple caching dictionary to minimize API calls
 const cache = new Map();
 
 /**
- * Helper: Send prompt to Groq and return text
+ * Helper: Send prompt to Gemini and return text
  */
-const callAI = async (prompt) => {
-  if (!apiKey) throw new Error("API key missing. Please provide GROQ_API_KEY.");
-  
-  const response = await axios.post(GROQ_URL, {
-    model: MODEL_NAME,
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.7
-  }, {
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    }
-  });
-
-  if (response.data.choices && response.data.choices[0].message) {
-    return response.data.choices[0].message.content;
+const generateResponse = async (prompt) => {
+  if (!apiKey || apiKey === 'your_api_key_here') {
+    throw new Error("API key missing. Please provide GEMINI_API_KEY in .env.");
   }
-  throw new Error('Invalid AI response structure');
+  try {
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    return response.text();
+  } catch (error) {
+    console.error('Gemini API Error:', error);
+    throw new Error('Failed to generate response from Gemini API');
+  }
 };
 
 /**
@@ -131,7 +124,7 @@ Keep it concise, use bullet points if helpful, and highlight key concepts only.
 Content:
 ${videoTranscriptOrDescription}`;
 
-    const summary = await callAI(prompt);
+    const summary = await generateResponse(prompt);
     cache.set(cacheKey, summary);
     return summary;
   } catch (err) {
@@ -184,7 +177,7 @@ CONTENT TO ANALYZE:
 ${content}`;
 
   try {
-    const text = await callAI(prompt);
+    const text = await generateResponse(prompt);
     return parseAIJSON(text, 'object');
   } catch (err) {
     console.error('Groq Summary+Quiz Error:', err.message);
@@ -218,7 +211,7 @@ CONTENT:
 ${content}`;
 
   try {
-    const text = await callAI(prompt);
+    const text = await generateResponse(prompt);
     return parseAIJSON(text, 'array');
   } catch (err) {
     console.error('Groq Quiz Error:', err.message);
@@ -255,7 +248,7 @@ You MUST respond in this EXACT JSON format (no markdown, no code blocks, just ra
 TOPIC: ${courseTopic}`;
 
   try {
-    const text = await callAI(prompt);
+    const text = await generateResponse(prompt);
     return parseAIJSON(text, 'array');
   } catch (err) {
     console.error('Groq Assessment Error:', err.message);
@@ -309,7 +302,7 @@ MATERIAL (${deadlineDays} days deadline):
 ${materialText}`;
 
   try {
-    const text = await callAI(prompt);
+    const text = await generateResponse(prompt);
     return parseAIJSON(text, 'object');
   } catch (err) {
     console.error('Groq Personalized Analysis Error:', err.message);
@@ -323,7 +316,7 @@ ${materialText}`;
 const generateStudyPlan = async (materialText, deadlineDate) => {
   try {
     const prompt = `Generate a structured daily study plan for the following material to be completed by ${deadlineDate}. Format as JSON string with keys 'days' array containing 'date', 'topic', 'tasks' array.\n\nMaterial: ${materialText}`;
-    const text = await callAI(prompt);
+    const text = await generateResponse(prompt);
     return parseAIJSON(text, 'object');
   } catch (err) {
     console.error('Groq Study Plan Error:', err.message);
@@ -348,7 +341,7 @@ You MUST respond in this EXACT JSON format (no markdown, no code blocks, just ra
 }`;
 
   try {
-    const text = await callAI(prompt);
+    const text = await generateResponse(prompt);
     return parseAIJSON(text, 'object');
   } catch (err) {
     console.error('Groq Metadata Error:', err.message);
@@ -380,7 +373,7 @@ You MUST respond in this EXACT JSON format (no markdown, no code blocks, just ra
 ]`;
 
   try {
-    const text = await callAI(prompt);
+    const text = await generateResponse(prompt);
     return parseAIJSON(text, 'array');
   } catch (err) {
     console.error('Groq Launch Test Error:', err.message);
@@ -407,7 +400,7 @@ You MUST respond in this EXACT JSON format (no markdown, no code blocks, just ra
 DOMAIN: ${domain}`;
 
   try {
-    const text = await callAI(prompt);
+    const text = await generateResponse(prompt);
     const result = parseAIJSON(text, 'object');
     cache.set(cacheKey, result);
     return result;
@@ -447,7 +440,7 @@ You MUST respond in this EXACT JSON format (no markdown, no code blocks, just ra
 }`;
 
   try {
-    const text = await callAI(prompt);
+    const text = await generateResponse(prompt);
     const result = parseAIJSON(text, 'object');
     cache.set(cacheKey, result);
     return result;
@@ -478,7 +471,7 @@ You MUST respond in this EXACT JSON format (no markdown, no code blocks, just ra
 }`;
 
   try {
-    const text = await callAI(prompt);
+    const text = await generateResponse(prompt);
     const result = parseAIJSON(text, 'object');
     cache.set(cacheKey, result);
     return result;
@@ -517,7 +510,7 @@ You MUST respond in this EXACT JSON format (no markdown, no code blocks, just ra
 }`;
 
   try {
-    const text = await callAI(prompt);
+    const text = await generateResponse(prompt);
     return parseAIJSON(text, 'object');
   } catch (err) {
     console.error('Learning Insights Error:', err.message);
@@ -551,7 +544,7 @@ You MUST respond in this EXACT JSON format (no markdown, no code blocks, just ra
 ]`;
 
   try {
-    const text = await callAI(prompt);
+    const text = await generateResponse(prompt);
     return parseAIJSON(text, 'array');
   } catch (err) {
     console.error('Level Test Generation Error:', err.message);
@@ -559,9 +552,61 @@ You MUST respond in this EXACT JSON format (no markdown, no code blocks, just ra
   }
 };
 
+/**
+ * AI Tutor Chat — Level-aware + Multimodal (Handles Text, Image, PDF, DOCX)
+ */
+const chatTutorMultimodal = async (history, message, file, level = 3, topic = '') => {
+  const levelDesc = getLevelDescription(level);
+  const topicContext = topic ? `The current topic is: "${topic}".` : '';
+
+  let systemPrompt = `You are an AI Tutor for NeuroLearn, an adaptive learning platform.
+The student's level is: ${levelDesc}
+${topicContext}
+
+RULES:
+- Answer based on their level and the current topic
+- Ensure clarity and correctness
+- If the student provides an image or document, analyze it thoroughly and answer their question based on it.
+- Be concise, encouraging, and clear
+
+The student asks: ${message}`;
+
+  try {
+    const parts = [systemPrompt];
+
+    if (file) {
+      const mimeType = file.mimetype;
+      
+      // Handle Word Documents via text extraction
+      if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || mimeType === 'application/msword') {
+        const result = await mammoth.extractRawText({ buffer: file.buffer });
+        parts.push(`\\n\\n--- ATTACHED DOCUMENT CONTENT ---\\n${result.value}\\n---------------------------------`);
+      } 
+      // Handle Image and PDF natively via inline data for Gemini 1.5 Pro
+      else if (['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(mimeType)) {
+        parts.push({
+          inlineData: {
+            data: file.buffer.toString("base64"),
+            mimeType: mimeType
+          }
+        });
+      } else {
+        throw new Error(`Unsupported file type: ${mimeType}`);
+      }
+    }
+
+    const reply = await generateResponse(parts);
+    return reply;
+  } catch (err) {
+    console.error('Gemini Multimodal Chat Error:', err);
+    throw new Error('Failed to respond to multimodal chat');
+  }
+};
+
 module.exports = {
   generateSummary,
   chatTutor,
+  chatTutorMultimodal,
   generateStudyPlan,
   generateSummaryAndQuiz,
   generateQuiz,
